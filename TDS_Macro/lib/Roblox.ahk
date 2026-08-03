@@ -61,3 +61,10 @@ ActivateRoblox()
 	else
 		return 1
 }
+
+EnableHighDpiSupport() {
+    try DllCall("Shcore\SetProcessDpiAwareness", "Int", 2, "Int")
+    catch {
+        try DllCall("User32\SetProcessDPIAware")
+    }
+}

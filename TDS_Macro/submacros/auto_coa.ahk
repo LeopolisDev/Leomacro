@@ -4,6 +4,8 @@
 #Include %A_LineFile%/../../lib/Roblox.ahk
 #Include %A_LineFile%/../../lib/ImageSearch/ImageSearch.ahk
 
+EnableHighDpiSupport()
+
 global AppDataOpt := A_AppData "\leomacro\Options"
 global SettingsFile := AppDataOpt "\Settings.tds"
 

@@ -21,7 +21,7 @@ leomacro is an advanced, fully-featured automation tool for Roblox Tower Defense
 * **AutoHotkey:** [AutoHotkey v2.0](https://www.autohotkey.com/) (Required. Do not use v1.1)
 * **Windows Settings:**
   * Recommended Screen Resolution: **1920x1080**
-  * Windows Scaling: **100%** (strictly required)
+  * Windows Scaling: **100% or 125%** (125% is supported)
   * Taskbar: Must be visible (not auto-hidden)
   * **OCR Language:** The English Windows Language Pack must be installed for screen text recognition (OCR) to function properly.
 * **Roblox & TDS Settings:**

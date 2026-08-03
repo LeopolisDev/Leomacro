@@ -4,6 +4,8 @@
 #Include %A_LineFile%/../../lib/Roblox.ahk
 #Include %A_LineFile%/../../lib/ImageSearch/ImageSearch.ahk
 
+EnableHighDpiSupport()
+
 SetWorkingDir("%A_LineFile%/../../")
 
 global unfocusX := 150, unfocusY := 200

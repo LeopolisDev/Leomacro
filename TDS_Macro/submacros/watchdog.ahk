@@ -22,6 +22,8 @@ MainPID := A_Args[1]
 #Include "%A_LineFile%\..\..\lib\OCR.ahk"
 #Include "%A_LineFile%\..\..\lib\Roblox.ahk"
 
+EnableHighDpiSupport()
+
 Opt := A_AppData "\leomacro\Options"
 SettingsFile := Opt "\Settings.tds"
 StateFile := A_AppData "\leomacro\state.ini"

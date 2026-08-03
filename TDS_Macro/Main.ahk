@@ -33,6 +33,8 @@ if (A_PtrSize == 4) {
 #Include "*i %A_ScriptDir%\lib\ImageSearch\ImageSearch.ahk"
 #Include "*i %A_ScriptDir%\submacros\updater.ahk"
 
+EnableHighDpiSupport()
+
 ver := "1.3.1"
 
 A_MaxHotkeysPerInterval := 9999
@@ -3298,7 +3300,7 @@ ShowFAQ(*) {
     ModernMsgBox("FAQ",
         "[SCREEN AND SYSTEM SETTINGS]`n" .
         "- Screen Resolution: Works strictly in 1920x1080.`n" .
-        "- Windows Scale: Must be set to 100%.`n" .
+        "- Windows Scale: 100% or 125% is supported.`n" .
         "- Taskbar: Must be visible.`n`n" .
         "[ROBLOX AND GAME SETTINGS]`n" .
         "- UI Scale: Set to Large.`n" .
