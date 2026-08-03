@@ -698,17 +698,20 @@ for index, strat in LoadedStrats {
     ChildGui.Add("Text", "x" (C1X + 155) " y" (C1Y + 65) " +BackgroundTrans", "🕒 " (strat.time != "" ? strat.time : "Unknown"))
     ChildGui.Add("Text", "x" (C1X + 155) " y" (C1Y + 83) " +BackgroundTrans", "⛃ " (strat.income != "" ? strat.income : "Unknown"))
 
+    loadBtnW := 228
+    loadBtnH := 42
+
     if ((strat.difficulty = "Hardcore" || strat.difficulty = "Voidcore")) {
-        hBtnNormal := CreateGradientButton(220, 38, 8, "0xff961ea1", "0xff5f237a", "0x40000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
-        hBtnHover := CreateGradientButton(220, 38, 8, "0xffea00ff", "0xff8d32b7", "0x60000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
+        hBtnNormal := CreateGradientButton(loadBtnW, loadBtnH, 8, "0xff961ea1", "0xff5f237a", "0x40000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
+        hBtnHover := CreateGradientButton(loadBtnW, loadBtnH, 8, "0xffea00ff", "0xff8d32b7", "0x60000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
     } else {
-        hBtnNormal := CreateGradientButton(220, 38, 8, "0xFF147A6E", "0xFF214B75", "0x40000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
-        hBtnHover := CreateGradientButton(220, 38, 8, "0xFF1CB5A2", "0xFF3272B7", "0x60000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
+        hBtnNormal := CreateGradientButton(loadBtnW, loadBtnH, 8, "0xFF147A6E", "0xFF214B75", "0x40000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
+        hBtnHover := CreateGradientButton(loadBtnW, loadBtnH, 8, "0xFF1CB5A2", "0xFF3272B7", "0x60000000", "0x5dffffff", "Load", "Segoe UI", 14, 1)
     }
 
-    picLoadBtn := ChildGui.Add("Picture", "x" (C1X + 365) " y" (C1Y + 68) " w220 h38 +BackgroundTrans", "HBITMAP:*" hBtnNormal)
+    picLoadBtn := ChildGui.Add("Picture", "x" (C1X + 361) " y" (C1Y + 66) " w" loadBtnW " h" loadBtnH " +BackgroundTrans", "HBITMAP:*" hBtnNormal)
 
-    dl1 := ChildGui.Add("Text", "x" (C1X + 365) " y" (C1Y + 68) " w220 h38 +BackgroundTrans +0x200 Center", "")
+    dl1 := ChildGui.Add("Text", "x" (C1X + 361) " y" (C1Y + 66) " w" loadBtnW " h" loadBtnH " +BackgroundTrans +0x200 Center", "")
     dl1.SetFont("cFFFFFF s10 Bold", "Segoe UI")
     
     dl1.StratFile := strat.fileName
@@ -726,8 +729,8 @@ if (LoadedStrats.Length == 0) {
     ContentH := 220
 }
 
-SliderX := FrameW - 10 
-SliderW := 6 
+SliderX := FrameW - 12 
+SliderW := 8 
 
 if (ContentH > 0) {
     SliderH := Round(FrameH * (FrameH / ContentH))
@@ -762,9 +765,9 @@ OnMessage(0x020A, OnMouseWheel)
 
 
 MainGui.SetFont("s11 w400 cFFFFFF", "Segoe UI")
-global Tab1_Start := MainGui.Add("Text", "x30 y500 w300 h40 Center Background0e0e0f +Border 0x200", "Start (F1)")
+global Tab1_Start := MainGui.Add("Text", "x30 y499 w300 h44 Center Background0e0e0f +Border 0x200", "Start (F1)")
 Tab1_Start.OnEvent("Click", StartStrategy)
-global Tab1_Stop := MainGui.Add("Text",  "x340 y500 w330 h40 Center Background0e0e0f +Border 0x200", "Stop (F2)")
+global Tab1_Stop := MainGui.Add("Text",  "x340 y499 w330 h44 Center Background0e0e0f +Border 0x200", "Stop (F2)")
 Tab1_Stop.OnEvent("Click", StopStrategy)
 
 HoverEffect_btns.Push(Tab1_Start) 
@@ -1593,7 +1596,8 @@ StartCommunityScrollDrag() {
     absSliderX := FrameX + SliderX
     absSliderY := FrameY + GetCommunitySliderY(CurrentScrollPos)
 
-    if (mx < absSliderX || mx > absSliderX + SliderW || my < FrameY || my > FrameY + FrameH)
+    hitPad := Max(10, Round(SliderW * 2))
+    if (mx < absSliderX - hitPad || mx > absSliderX + SliderW + hitPad || my < FrameY || my > FrameY + FrameH)
         return false
 
     if (my >= absSliderY && my <= absSliderY + SliderH) {
