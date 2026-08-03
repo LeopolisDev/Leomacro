@@ -1583,7 +1583,7 @@ StartCommunityScrollDrag() {
     global FrameX, FrameY, FrameW, FrameH, SliderX, SliderW, SliderH
     global CurrentScrollPos, ContentH, ScrollThumbDragging, ScrollThumbGrabOffset, ChildGui, CurrentTab
 
-    if (CurrentTab != "Tab1" || !ChildGui.Visible || ContentH <= FrameH)
+    if (CurrentTab != "Tab1" || !DllCall("IsWindowVisible", "Ptr", ChildGui.Hwnd, "Int") || ContentH <= FrameH)
         return false
 
     MouseGetPos(&mx, &my)
@@ -1610,7 +1610,7 @@ StartCommunityScrollDrag() {
 TrackCommunityScrollDrag(*) {
     global FrameY, FrameH, SliderH, ContentH, ScrollThumbDragging, ScrollThumbGrabOffset, ChildGui, CurrentTab
 
-    if (!ScrollThumbDragging || CurrentTab != "Tab1" || !ChildGui.Visible)
+    if (!ScrollThumbDragging || CurrentTab != "Tab1" || !DllCall("IsWindowVisible", "Ptr", ChildGui.Hwnd, "Int"))
         return
 
     if !GetKeyState("LButton", "P") {
