@@ -12,7 +12,7 @@ global unfocusX := 150, unfocusY := 200
 global isRunning := false
 global usedt := 0
 
-global aGui := Gui("+LastFound +Border +ToolWindow +AlwaysOnTop -DPIScale")
+global aGui := Gui("+LastFound +Border +ToolWindow +AlwaysOnTop")
 
 aGui.SetFont("s9")
 global text := aGui.Add("Text", "x10 y10 w180 h50 BackgroundTrans", "The tool for auto opening consumable crates.")

@@ -356,7 +356,7 @@ if (autoRun = 1 && autoStrat != "" && FileExist(autoStrat)) {
     }
 }
 
-global MainGui := Gui("-Caption +Border +LastFound -DPIScale")
+global MainGui := Gui("-Caption +Border +LastFound")
 MainGui.BackColor := "121212"
 
 global SystemHwnds := Map()
@@ -588,7 +588,7 @@ global ChildHwnd := 0
 global ScrollThumbDragging := false
 global ScrollThumbGrabOffset := 0
 
-ChildGui := Gui("-Caption +E0x20 +Border +Parent" MainGui.Hwnd " -DPIScale")
+ChildGui := Gui("-Caption +E0x20 +Border +Parent" MainGui.Hwnd)
 ChildGui.BackColor := "181818"
 ChildGui.SetFont("s10 cWhite", "Segoe UI")
 
@@ -2941,7 +2941,7 @@ ShowTowerPathDialog(towerID) {
     global Towers, ActivePathSelectTowerID
     if (!Towers.Has(towerID) || Towers[towerID].path = 0 || Towers[towerID].path = "") {
         ActivePathSelectTowerID := towerID
-        PathGui := Gui("+AlwaysOnTop +Border -DPIScale", "Path Selection")
+        PathGui := Gui("+AlwaysOnTop +Border", "Path Selection")
         PathGui.SetFont("s12 Bold c000000", "Segoe UI")
         PathGui.Add("Text", "x25 y20 w350", "Tower " towerID)
         PathGui.SetFont("s11 w400 c000000", "Segoe UI")
@@ -5302,7 +5302,7 @@ UpdateTowerIndicator(towerID) {
 
     styleStr := "+ToolWindow +AlwaysOnTop -Caption +Disabled +Border +E0x20 +E0x08000000"
 
-    tg := Gui(styleStr " -DPIScale")
+    tg := Gui(styleStr)
     tg.BackColor := MultiplePaths ? "1A1A1A" : "FFFFFF"
     
     if (MultiplePaths)
@@ -5456,7 +5456,7 @@ ShowDebugConsole() {
     OverlayX      := Round(A_ScreenWidth  * 0.73)
     OverlayY      := Round(A_ScreenHeight * 0.76)
 
-    og := Gui("+AlwaysOnTop +ToolWindow -Caption +E0x20 +E0x08000000 +E0x00000008 +LastFound -DPIScale")
+    og := Gui("+AlwaysOnTop +ToolWindow -Caption +E0x20 +E0x08000000 +E0x00000008 +LastFound")
     og.BackColor := "000000"
     og.Title     := "DebugOverlay"
     
