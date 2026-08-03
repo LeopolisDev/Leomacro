@@ -4,7 +4,7 @@
 #Include %A_LineFile%/../../lib/Roblox.ahk
 #Include %A_LineFile%/../../lib/ImageSearch/ImageSearch.ahk
 
-global AppDataOpt := A_AppData "\Ultimate_Macro\Options"
+global AppDataOpt := A_AppData "\leomacro\Options"
 global SettingsFile := AppDataOpt "\Settings.tds"
 
 if !DirExist(AppDataOpt)

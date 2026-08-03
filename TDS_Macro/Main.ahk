@@ -18,8 +18,8 @@ if (RegExMatch(A_ScriptDir, "i)\.(zip|rar)")) {
     ExitApp()
 }
 
-if WinExist("Ultimate Macro") {
-    WinClose("Ultimate Macro")
+if WinExist("leomacro") {
+    WinClose("leomacro")
 }
 
 if (A_PtrSize == 4) {
@@ -41,10 +41,10 @@ pToken := Gdip_Startup()
 OnExit(CleanupGdip)
 OnExit(HandleExit)
 
-global AppDataOpt := A_AppData "\Ultimate_Macro\Options"
+global AppDataOpt := A_AppData "\leomacro\Options"
 global SettingsFile := AppDataOpt "\Settings.tds"
-global RecordingsDir := A_AppData "\Ultimate_Macro\Recordings"
-global StateFile := A_AppData "\Ultimate_Macro\state.ini"
+global RecordingsDir := A_AppData "\leomacro\Recordings"
+global StateFile := A_AppData "\leomacro\state.ini"
 
 global StratsDir := A_WorkingDir "\Resources\Strats"
 
@@ -365,7 +365,7 @@ if FileExist(IconPath) {
     SystemHwnds[sysIcon.Hwnd] := true
 }
 
-global GuiTitleCtrl := MainGui.Add("Text", "x50 y12 w150 h25 BackgroundTrans", "Ultimate Macro | TDS")
+global GuiTitleCtrl := MainGui.Add("Text", "x50 y12 w150 h25 BackgroundTrans", "leomacro | TDS")
 GuiTitleCtrl.OnEvent("Click", MoveWindow)
 SystemHwnds[GuiTitleCtrl.Hwnd] := true
 
@@ -1073,7 +1073,7 @@ Auto_Consum.OnEvent("Click", RunAutoConsumableTool)
 ; tab 7 - credits ===========================
 
 MainGui.SetFont("s16 w450 cFFFFFF", "Segoe UI Variable")
-global Credit_TITLE := MainGui.Add("Text", "x30 y95 w640 Hidden Center", "Ultimate Macro - the best macro for TDS")
+global Credit_TITLE := MainGui.Add("Text", "x30 y95 w640 Hidden Center", "leomacro - the best macro for TDS")
 
 MainGui.SetFont("s12 w400 cFFFFFF", "Segoe UI")
 global Credit_Content := MainGui.Add("Link", "x30 y140 w640 Hidden", "
@@ -1102,7 +1102,7 @@ DiscordImg.OnEvent("Click", DiscordLink)
 global YoutubeImg := MainGui.Add("Picture", "x642 y520 w24 h-1 Hidden BackgroundTrans", "Resources\youtube.png")
 YoutubeImg.OnEvent("Click", YouTubeLink)
 
-MainGui.Title := "Ultimate Macro"
+MainGui.Title := "leomacro"
 MainGui.Show("w700 h565")
 
 if (AlwaysOnTop = 1) {
@@ -2898,7 +2898,7 @@ TestWebhook(ctrl, *) {
         whr := ComObject("WinHttp.WinHttpRequest.5.1")
         whr.Open("POST", v.WebhookLink, false)
         whr.SetRequestHeader("Content-Type", "application/json")
-        whr.Send('{"content": "✅ Webhook test successful! Ultimate Macro TDS is connected."}')
+        whr.Send('{"content": "✅ Webhook test successful! leomacro TDS is connected."}')
         if (whr.Status = 200 || whr.Status = 204)
             ModernMsgBox("Success", "Webhook test successful!", "OK")
         else
@@ -2928,7 +2928,7 @@ SaveWebhookSettings(ctrl, *) {
     IniWrite(WebhookTriumphScreenshots, SettingsFile, "Webhook", "WebhookTriumphScreenshots")
     IniWrite(WebhookSepatateTriumphScreenshots, SettingsFile, "Webhook", "WebhookSepatateTriumphScreenshots")
 
-    MsgBox("All webhook settings have been successfully saved!", "Ultimate Macro", 0x40)
+    MsgBox("All webhook settings have been successfully saved!", "leomacro", 0x40)
 }
 
 
@@ -3132,7 +3132,7 @@ SaveAllSettings(ctrl, *) {
     SetMouseDelay(MouseDelay)
     SetKeyDelay(KeyDelay)
 
-    MsgBox("All settings have been successfully saved!", "Ultimate Macro", 0x1040)
+    MsgBox("All settings have been successfully saved!", "leomacro", 0x1040)
 }
 
 

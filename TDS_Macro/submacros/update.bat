@@ -62,13 +62,13 @@ echo:
 
 del /f /q "%ZIP_PATH%" 2>nul
 
-echo %green%Update completed! Starting TDS Macro...%reset%
+echo %green%Update completed! Starting leomacro...%reset%
 timeout /t 2 >nul
 
 if exist "%MACRO_DIR%\Main.ahk" (
     start "" "%MACRO_DIR%\Main.ahk"
-) else if exist "%MACRO_DIR%\ultimate_macro.exe" (
-    start "" "%MACRO_DIR%\ultimate_macro.exe"
+) else if exist "%MACRO_DIR%\leomacro.exe" (
+    start "" "%MACRO_DIR%\leomacro.exe"
 )
 
 exit /b 0

@@ -22,9 +22,9 @@ MainPID := A_Args[1]
 #Include "%A_LineFile%\..\..\lib\OCR.ahk"
 #Include "%A_LineFile%\..\..\lib\Roblox.ahk"
 
-Opt := A_AppData "\Ultimate_Macro\Options"
+Opt := A_AppData "\leomacro\Options"
 SettingsFile := Opt "\Settings.tds"
-StateFile := A_AppData "\Ultimate_Macro\state.ini"
+StateFile := A_AppData "\leomacro\state.ini"
 
 global WebhookLink := IniRead(SettingsFile, "Webhook", "Link", "")
 tempWebhook := IniRead(SettingsFile, "Webhook", "Enabled", "OFF")

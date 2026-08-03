@@ -1,7 +1,7 @@
-# Ultimate Macro - Tower Defense Simulator 
+# leomacro - Tower Defense Simulator 
 Started on March 30, 2026. My friend bet me that I wouldn't make a macro for TDS, but I did, lol.
 
-Ultimate Macro is an advanced, fully-featured automation tool for Roblox Tower Defense Simulator. 
+leomacro is an advanced, fully-featured automation tool for Roblox Tower Defense Simulator. 
 
 ## Features
 * **Record & Play Custom Strategies** - Record your exact tower placements, upgrades, abilities, and actions, then replay them flawlessly.
