@@ -477,7 +477,7 @@ SwapUnitCtrl.OnEvent("Change", (*) => (
 ))
 
 MainGui.SetFont("s9 w400 cFFFFFF")
-global AutoEquipCtrl := MainGui.Add("Checkbox", "x357 y190 vAutoEquip 0x200 Checked" AutoEquip, "Auto Equip Towers")
+global AutoEquipCtrl := MainGui.Add("Checkbox", "x385 y190 vAutoEquip 0x200 Checked" AutoEquip, "Auto Equip Towers")
 AutoEquipCtrl.OnEvent("Click", EnableAutoEquip)
 
 if !DirExist(StratsDir)
@@ -1681,11 +1681,11 @@ EnableStratRotation(*) {
         IniWrite(AutoEquip, SettingsFile, "Options", "AutoEquip")
         SwapAmount := SwapAmountCtrl.Text
         SwapUnit := SwapUnitCtrl.Text
-        AutoEquipCtrl.Move(357, 190)
+        AutoEquipCtrl.Move(385, 190)
         IniWrite(SwapAmount, SettingsFile, "Options", "SwapAmount")
         IniWrite(SwapUnit, SettingsFile, "Options", "SwapUnit")
     } else {
-        AutoEquipCtrl.Move(155, 190)
+        AutoEquipCtrl.Move(185, 190)
     }
 }
 
