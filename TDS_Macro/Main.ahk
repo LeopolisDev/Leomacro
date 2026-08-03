@@ -1521,19 +1521,20 @@ DownloadStrat(ctrl, *) {
 
 
 OnMouseWheel(wp, lp, msg, hwnd) {
-    global ChildHwnd, ChildGui
-    MouseGetPos(, , &maxH, &ctrlH, 2)
+    global ChildGui, FrameX, FrameY, FrameW, FrameH
+    MouseGetPos(&mx, &my, &winUnderCursor, &ctrlUnderCursor, 2)
 
-    parentH := (ctrlH != "") ? DllCall("GetParent", "Ptr", ctrlH, "Ptr") : 0
     ch := ChildGui.Hwnd
-    
-    if (maxH = ch || ctrlH = ch || parentH = ch) {
-        
+    parentH := (ctrlUnderCursor != "") ? DllCall("GetParent", "Ptr", ctrlUnderCursor, "Ptr") : 0
+
+    ; Keep the community strategy panel anchored unless the wheel is used directly over it.
+    if (mx < FrameX || mx > FrameX + FrameW || my < FrameY || my > FrameY + FrameH)
+        return
+
+    if (winUnderCursor = ch || ctrlUnderCursor = ch || parentH = ch) {
         dir := ((wp >> 16) & 0xFFFF) > 0x7FFF ? 1 : 0
-        Loop 3 {
-            
+        Loop 3
             SendMessage(0x0115, dir, 0, , "ahk_id " ch)
-        }
     }
 }
 
