@@ -476,8 +476,8 @@ global AutoEquipCtrl := MainGui.Add("Checkbox", "x357 y190 vAutoEquip 0x200 Chec
 AutoEquipCtrl.OnEvent("Click", EnableAutoEquip)
 
 MainGui.SetFont("s10 w400 c3A86FF", "Segoe UI")
-global Tab1_Section2 := MainGui.Add("Text", "x30 y225 h22", "Community Strategies")
-global Tab1_Line2 := MainGui.Add("Progress", "x30 y248 w640 h1 Background333333", 0)
+global Tab1_Section2 := MainGui.Add("Text", "x30 y214 h22", "Community Strategies")
+global Tab1_Line2 := MainGui.Add("Progress", "x30 y237 w640 h1 Background333333", 0)
 
 
 if !DirExist(StratsDir)
