@@ -21,7 +21,7 @@ global LastChainTime := 0
 global LastBeatTime := 0
 global IsRunning := false
 
-global aGui := Gui("+LastFound +Border +ToolWindow +AlwaysOnTop")
+global aGui := Gui("+LastFound +Border +ToolWindow +AlwaysOnTop -DPIScale")
 
 aGui.SetFont("s9")
 global cooldown := aGui.Add("Edit", "vchainInterval Number Limit2 x75 y10 w50 h20", "10")
