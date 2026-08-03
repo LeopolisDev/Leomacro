@@ -202,6 +202,9 @@ if FileExist(IconPath)
 
 WM_LBUTTONDOWN_Drag(wParam, lParam, msg, hwnd) {
     global MainGui
+    if (StartCommunityScrollDrag())
+        return
+
     If (MainGui) {
         if (hwnd != MainGui.Hwnd) {
             return
@@ -580,6 +583,8 @@ global ContentH := 400
 global CurrentScrollPos := 0
 global SliderH := 30
 global ChildHwnd := 0
+global ScrollThumbDragging := false
+global ScrollThumbGrabOffset := 0
 
 ChildGui := Gui("-Caption +E0x20 +Border +Parent" MainGui.Hwnd)
 ChildGui.BackColor := "181818"
@@ -1539,8 +1544,100 @@ OnMouseWheel(wp, lp, msg, hwnd) {
 }
 
 
-OnScroll(wp, lp, msg, hwnd) {
+GetCommunitySliderY(scrollPos) {
+    global ContentH, FrameH, SliderH
+    maxScroll := ContentH - FrameH
+    availableTrackSpace := FrameH - SliderH
+
+    if (maxScroll <= 0 || availableTrackSpace <= 0)
+        return 0
+
+    return Round((scrollPos / maxScroll) * availableTrackSpace)
+}
+
+
+UpdateCommunityScroll(newPos) {
     global ChildGui, CurrentScrollPos, ContentH, FrameH, SliderH, CustomSlider
+
+    ch := ChildGui.Hwnd
+    maxScroll := ContentH - FrameH
+    if (maxScroll <= 0)
+        return false
+
+    newPos := Max(0, Min(newPos, maxScroll))
+    if (newPos = CurrentScrollPos)
+        return false
+
+    DllCall("ScrollWindow", "Ptr", ch, "Int", 0, "Int", CurrentScrollPos - newPos, "Ptr", 0, "Ptr", 0)
+    CurrentScrollPos := newPos
+
+    sliderVisualY := GetCommunitySliderY(newPos)
+    CustomSlider.Move(, sliderVisualY)
+
+    DllCall("UpdateWindow", "Ptr", ch)
+    return true
+}
+
+
+StartCommunityScrollDrag() {
+    global FrameX, FrameY, FrameW, FrameH, SliderX, SliderW, SliderH
+    global CurrentScrollPos, ContentH, ScrollThumbDragging, ScrollThumbGrabOffset, ChildGui, CurrentTab
+
+    if (CurrentTab != "Tab1" || !ChildGui.Visible || ContentH <= FrameH)
+        return false
+
+    MouseGetPos(&mx, &my)
+
+    absSliderX := FrameX + SliderX
+    absSliderY := FrameY + GetCommunitySliderY(CurrentScrollPos)
+
+    if (mx < absSliderX || mx > absSliderX + SliderW || my < FrameY || my > FrameY + FrameH)
+        return false
+
+    if (my >= absSliderY && my <= absSliderY + SliderH) {
+        ScrollThumbGrabOffset := my - absSliderY
+    } else {
+        ScrollThumbGrabOffset := Round(SliderH / 2)
+    }
+
+    ScrollThumbDragging := true
+    SetTimer(TrackCommunityScrollDrag, 10)
+    TrackCommunityScrollDrag()
+    return true
+}
+
+
+TrackCommunityScrollDrag(*) {
+    global FrameY, FrameH, SliderH, ContentH, ScrollThumbDragging, ScrollThumbGrabOffset, ChildGui, CurrentTab
+
+    if (!ScrollThumbDragging || CurrentTab != "Tab1" || !ChildGui.Visible)
+        return
+
+    if !GetKeyState("LButton", "P") {
+        ScrollThumbDragging := false
+        SetTimer(TrackCommunityScrollDrag, 0)
+        return
+    }
+
+    maxScroll := ContentH - FrameH
+    availableTrackSpace := FrameH - SliderH
+    if (maxScroll <= 0 || availableTrackSpace <= 0) {
+        ScrollThumbDragging := false
+        SetTimer(TrackCommunityScrollDrag, 0)
+        return
+    }
+
+    MouseGetPos(&mx, &my)
+    newSliderY := my - FrameY - ScrollThumbGrabOffset
+    newSliderY := Max(0, Min(newSliderY, availableTrackSpace))
+
+    newPos := Round((newSliderY / availableTrackSpace) * maxScroll)
+    UpdateCommunityScroll(newPos)
+}
+
+
+OnScroll(wp, lp, msg, hwnd) {
+    global ChildGui
     ch := ChildGui.Hwnd
     if (hwnd != ch)
         return
@@ -1552,20 +1649,7 @@ OnScroll(wp, lp, msg, hwnd) {
     } else {
         return
     }
-    maxScroll := ContentH - FrameH
-    newPos := Max(0, Min(newPos, maxScroll))
-    if (newPos != CurrentScrollPos) {
-        DllCall("ScrollWindow", "Ptr", hwnd, "Int", 0, "Int", CurrentScrollPos - newPos, "Ptr", 0, "Ptr", 0)
-        CurrentScrollPos := newPos
-        
-        availableTrackSpace := FrameH - SliderH
-
-        sliderVisualY := Round((newPos / maxScroll) * availableTrackSpace)
-        
-        CustomSlider.Move(, sliderVisualY)
-        
-        DllCall("UpdateWindow", "Ptr", hwnd)
-    }
+    UpdateCommunityScroll(newPos)
 }
 
 EnableStratRotation(*) {
