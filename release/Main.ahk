@@ -35,7 +35,7 @@ if (A_PtrSize == 4) {
 
 EnableHighDpiSupport()
 
-ver := "1.3.1"
+ver := "1.1.0"
 
 A_MaxHotkeysPerInterval := 9999
 
