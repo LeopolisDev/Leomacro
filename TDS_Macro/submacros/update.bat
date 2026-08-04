@@ -65,10 +65,12 @@ del /f /q "%ZIP_PATH%" 2>nul
 echo %green%Update completed! Starting leomacro...%reset%
 timeout /t 2 >nul
 
-if exist "%MACRO_DIR%\Main.ahk" (
-    start "" "%MACRO_DIR%\Main.ahk"
+if exist "%MACRO_DIR%\Leomacro.exe" (
+    start "" "%MACRO_DIR%\Leomacro.exe"
 ) else if exist "%MACRO_DIR%\leomacro.exe" (
     start "" "%MACRO_DIR%\leomacro.exe"
+) else if exist "%MACRO_DIR%\Main.ahk" (
+    start "" "%MACRO_DIR%\Main.ahk"
 )
 
 exit /b 0

@@ -36,9 +36,8 @@ leomacro is an advanced, fully-featured automation tool for Roblox Tower Defense
 
 1. Download the latest release `.zip`.
 2. Extract **all files** to a folder (do not run the script directly from the ZIP file).
-3. Install [AutoHotkey v2.0](https://www.autohotkey.com/).
-4. Run `Main.ahk`.
-5. Enjoy the grind!
+3. Run `Leomacro.exe`.
+4. Enjoy the grind!
 
 ## Links & Support
 
