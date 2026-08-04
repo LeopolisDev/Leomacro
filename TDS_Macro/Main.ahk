@@ -990,7 +990,7 @@ MainGui.SetFont("s9 w400 cFFFFFF")
 global TimeScaleModeCtrl := MainGui.Add("DropDownList", "x595 y216 w80 Hidden", ["OFF","1.5x","2x"])
 TimeScaleModeCtrl.Text := TimeScaleMode
 
-MainGui.SetFont("s9 w400 cAAAAAA")
+MainGui.SetFont("s9 w400 cFFFFFF")
 global MacroStepFailLbl := MainGui.Add("Text", "x310 y240 w95 h16 Hidden BackgroundTrans", "Step fails:")
 MainGui.SetFont("s9 w400 cFFFFFF")
 global MacroStepFailTxt := MainGui.Add("Text", "x390 y240 w24 Hidden", MacroStepFailLimit)
