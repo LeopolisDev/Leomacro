@@ -4208,7 +4208,6 @@ WaitForRobloxWindow(timeout := 20) {
 TryLaunchRobloxDirect() {
     exePath := GetRobloxPlayerExePath()
     if (exePath = "") {
-        LogToConsole("Could not find RobloxPlayerBeta.exe for direct launch fallback.", true, false)
         return false
     }
 
@@ -4227,15 +4226,46 @@ GetRobloxPlayerExePath() {
     latestPath := ""
     latestTime := ""
 
-    for _, root in [EnvGet("ProgramFiles(x86)"), EnvGet("ProgramFiles"), EnvGet("LOCALAPPDATA")] {
+    searchRoots := [
+        EnvGet("ProgramFiles(x86)"),
+        EnvGet("ProgramFiles"),
+        EnvGet("LOCALAPPDATA"),
+        "C:\Program Files (x86)",
+        "C:\Program Files"
+    ]
+
+    for _, root in searchRoots {
         if (root = "")
             continue
 
-        Loop Files, root "\Roblox\Versions\*\RobloxPlayerBeta.exe", "F" {
-            modTime := FileGetTime(A_LoopFileFullPath, "M")
-            if (latestPath = "" || modTime > latestTime) {
-                latestTime := modTime
-                latestPath := A_LoopFileFullPath
+        for _, pattern in [
+            root "\Roblox\Versions\RobloxPlayerBeta.exe",
+            root "\Roblox\RobloxPlayerBeta.exe"
+        ] {
+            Loop Files, pattern, "F" {
+                modTime := FileGetTime(A_LoopFileFullPath, "M")
+                if (latestPath = "" || modTime > latestTime) {
+                    latestTime := modTime
+                    latestPath := A_LoopFileFullPath
+                }
+            }
+        }
+    }
+
+    if (latestPath = "") {
+        for _, root in searchRoots {
+            if (root = "")
+                continue
+            for _, versionsDir in [root "\Roblox\Versions", root "\Roblox"] {
+                if !DirExist(versionsDir)
+                    continue
+                Loop Files, versionsDir "\RobloxPlayerBeta.exe", "FR" {
+                    modTime := FileGetTime(A_LoopFileFullPath, "M")
+                    if (latestPath = "" || modTime > latestTime) {
+                        latestTime := modTime
+                        latestPath := A_LoopFileFullPath
+                    }
+                }
             }
         }
     }
