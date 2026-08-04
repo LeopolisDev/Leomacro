@@ -3586,12 +3586,17 @@ RunStrategy(stratFile := "", skipRestart := false, equip := false) {
         AutorunStartTime := checkStart
     }
 
+    robloxOpen := WinExist("ahk_exe RobloxPlayerBeta.exe") || WinExist("ahk_exe ApplicationFrameHost.exe")
+
     if (!switched) {
         if (!skipRestart) {
             CheckRestart()
         } else {
-            CloseRoblox()
-            RunRoblox()
+            if (!robloxOpen) {
+                RunRoblox()
+            } else {
+                ActivateRoblox()
+            }
             if (!AutoJoinTDS) {
                 LogToConsole("Roblox opened. Auto-join is disabled, so the macro will stop here.", true, false)
                 return
@@ -3602,8 +3607,11 @@ RunStrategy(stratFile := "", skipRestart := false, equip := false) {
             JoinGame()
         }
     } else {
-        CloseRoblox()
-        RunRoblox()
+        if (!robloxOpen) {
+            RunRoblox()
+        } else {
+            ActivateRoblox()
+        }
         if (!AutoJoinTDS) {
             LogToConsole("Roblox opened. Auto-join is disabled, so the macro will stop here.", true, false)
             return
