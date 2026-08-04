@@ -93,6 +93,7 @@ global AutoEquip := IniRead(SettingsFile, "Options", "AutoEquip", 0)
 global CheckTheMap := IniRead(SettingsFile, "Options", "CheckTheMap", 1)
 global UseHForUpgrade := IniRead(SettingsFile, "Options", "UseHotkeyForUpgrade", 1)
 global CollectPlaytimeRewards:= IniRead(SettingsFile, "Options", "CollectPlaytimeRewards", "1")
+global AutoJoinTDS := true
 global Strategy1Path := ResolveStratPath(IniRead(SettingsFile, "Options", "Strategy1", ""))
 global Strategy2Path := ResolveStratPath(IniRead(SettingsFile, "Options", "Strategy2", ""))
 
@@ -3591,6 +3592,10 @@ RunStrategy(stratFile := "", skipRestart := false, equip := false) {
         } else {
             CloseRoblox()
             RunRoblox()
+            if (!AutoJoinTDS) {
+                LogToConsole("Roblox opened. Auto-join is disabled, so the macro will stop here.", true, false)
+                return
+            }
             if (equip) {
                 EquipTowers(RequiredTowers)
             }
@@ -3599,6 +3604,10 @@ RunStrategy(stratFile := "", skipRestart := false, equip := false) {
     } else {
         CloseRoblox()
         RunRoblox()
+        if (!AutoJoinTDS) {
+            LogToConsole("Roblox opened. Auto-join is disabled, so the macro will stop here.", true, false)
+            return
+        }
         EquipTowers(RequiredTowers)
 
         JoinGame()
@@ -4053,6 +4062,8 @@ CheckRestart() {
         IsRestarting := false
         CloseRoblox()
         RunRoblox()
+        if (!AutoJoinTDS)
+            return
         JoinGame()
         return
     }
@@ -4112,93 +4123,73 @@ RunRoblox(doReload := true) {
     global VipLink, UseVipServer
     PlaceID := "3260590327"
 
-    Loop {
-        launchURLs := []
-        if ((UseVipServer = "1" || UseVipServer = 1) && VipLink != "") {
-            if InStr(VipLink, "privateServerLinkCode=") {
-                RegExMatch(VipLink, "privateServerLinkCode=([a-fA-F0-9]+)", &f)
-                launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
-                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
-            } else if InStr(VipLink, "share?code=") {
-                RegExMatch(VipLink, "code=([a-fA-F0-9]+)", &f)
-                launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
-                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
-            } else {
-                launchURLs.Push("roblox://placeId=" PlaceID)
-                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
-            }
+    joinURLs := []
+    if ((UseVipServer = "1" || UseVipServer = 1) && VipLink != "") {
+        if InStr(VipLink, "privateServerLinkCode=") {
+            RegExMatch(VipLink, "privateServerLinkCode=([a-fA-F0-9]+)", &f)
+            joinURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
+        } else if InStr(VipLink, "share?code=") {
+            RegExMatch(VipLink, "code=([a-fA-F0-9]+)", &f)
+            joinURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
         } else {
-            launchURLs.Push("roblox://placeId=" PlaceID)
-            launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
+            joinURLs.Push("roblox://placeId=" PlaceID)
         }
-
-        LogToConsole("Launching Roblox...", true, false)
-        started := TryLaunchRobloxDirect()
-
-        if (started) {
-            try {
-                Run(launchURLs[1])
-            } catch Error as e {
-                LogToConsole("Failed to join Roblox after direct launch: " e.Message, true, false)
-                started := false
-            }
-            Sleep(2500)
-        }
-
-        if (!started) {
-            for _, launchURL in launchURLs {
-                try {
-                    Run(launchURL)
-                } catch Error as e {
-                    LogToConsole("Failed to launch Roblox via " launchURL ": " e.Message, true, false)
-                    continue
-                }
-
-                if (WaitForRobloxWindow(20)) {
-                    started := true
-                    break
-                }
-            }
-        }
-
-        if (!started) {
-            LogToConsole("Roblox not started, retrying again...", true, false)
-            continue
-        }
-        LogToConsole("Roblox launched successfully.", true, false)
-        ActivateRoblox()
-        ExitFullScreen()
-        if WinExist("ahk_exe RobloxPlayerBeta.exe") {
-            WinMinimize("ahk_exe RobloxPlayerBeta.exe")
-            WinMaximize("ahk_exe RobloxPlayerBeta.exe")
-        } else if WinExist("ahk_exe ApplicationFrameHost.exe") {
-            WinMinimize("ahk_exe ApplicationFrameHost.exe")
-            WinMaximize("ahk_exe ApplicationFrameHost.exe")
-        }
-        ActivateRoblox()
-
-        startTime := A_TickCount
-        getRobloxPos(,,&w,&h)
-        Loop {
-            ActivateRoblox()
-
-            if (A_TickCount - startTime > 60000) {
-                if (doReload) {
-                    SafeReload()
-                } else {
-                    return false
-                }
-            }
-
-            res0 := AdvImageSearch("Resources/Play.png", Round(w * 0.25), Round(h * 0.66), Round(w * 0.75), Round(h * 0.34), 0.6, 1.4)
-            if (res0.status = "success" && res0.score > 0.65) {
-                break
-            } 
-            Sleep(1500)
-        }
-        SendEvent("{sc00F}")
-        return true 
+    } else {
+        joinURLs.Push("roblox://placeId=" PlaceID)
     }
+
+    LogToConsole("Launching Roblox...", true, false)
+    started := TryLaunchRobloxDirect()
+
+    if (!started) {
+        LogToConsole("Roblox did not open.", true, false)
+        if (doReload) {
+            SafeReload()
+        }
+        return false
+    }
+
+    LogToConsole("Roblox launched successfully.", true, false)
+    try {
+        Run(joinURLs[1])
+    } catch Error as e {
+        LogToConsole("Failed to join TDS after Roblox launch: " e.Message, true, false)
+        return false
+    }
+    Sleep(2500)
+
+    ActivateRoblox()
+    ExitFullScreen()
+    if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+        WinMinimize("ahk_exe RobloxPlayerBeta.exe")
+        WinMaximize("ahk_exe RobloxPlayerBeta.exe")
+    } else if WinExist("ahk_exe ApplicationFrameHost.exe") {
+        WinMinimize("ahk_exe ApplicationFrameHost.exe")
+        WinMaximize("ahk_exe ApplicationFrameHost.exe")
+    }
+    ActivateRoblox()
+
+    startTime := A_TickCount
+    getRobloxPos(,,&w,&h)
+    Loop {
+        ActivateRoblox()
+
+        if (A_TickCount - startTime > 60000) {
+            if (doReload) {
+                SafeReload()
+            } else {
+                return false
+            }
+        }
+
+        res0 := AdvImageSearch("Resources/Play.png", Round(w * 0.25), Round(h * 0.66), Round(w * 0.75), Round(h * 0.34), 0.6, 1.4)
+        if (res0.status = "success" && res0.score > 0.65) {
+            break
+        } 
+        Sleep(1500)
+    }
+    SendEvent("{sc00F}")
+    return true
 }
 
 WaitForRobloxWindow(timeout := 20) {
@@ -5377,6 +5368,8 @@ TryReconnect() {
         if (RunRoblox(false) == false) {
             continue
         } else {
+            if (!AutoJoinTDS)
+                return
             LogToConsole("Reconnect successful after " attempts " attempts!", true, false)
             startWatchdog()
             break
