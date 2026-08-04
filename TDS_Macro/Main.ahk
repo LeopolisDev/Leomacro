@@ -4186,8 +4186,9 @@ TryLaunchRobloxDirect() {
 GetRobloxPlayerExePath() {
     latestPath := ""
     latestTime := ""
+    localAppData := EnvGet("LOCALAPPDATA")
 
-    Loop Files, A_LocalAppData "\Roblox\Versions\*\RobloxPlayerBeta.exe", "F" {
+    Loop Files, localAppData "\Roblox\Versions\*\RobloxPlayerBeta.exe", "F" {
         modTime := FileGetTime(A_LoopFileFullPath, "M")
         if (latestPath = "" || modTime > latestTime) {
             latestTime := modTime
