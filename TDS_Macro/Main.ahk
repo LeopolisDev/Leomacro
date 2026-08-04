@@ -4137,15 +4137,10 @@ RunRoblox(doReload := true) {
 
         if (started) {
             try {
-                Run(launchURLs[2])
+                Run(launchURLs[1])
             } catch Error as e {
-                LogToConsole("Failed to join Roblox via web launch after direct start: " e.Message, true, false)
-                try {
-                    Run(launchURLs[1])
-                } catch Error as e2 {
-                    LogToConsole("Failed to join Roblox via protocol launch after direct start: " e2.Message, true, false)
-                    started := false
-                }
+                LogToConsole("Failed to join Roblox after direct launch: " e.Message, true, false)
+                started := false
             }
             Sleep(2500)
         }
