@@ -1,5 +1,5 @@
 #define MyAppName "Leomacro"
-#define MyAppVersion "1.3.1"
+#define MyAppVersion "1.0.4"
 #define MyAppExeName "Leomacro.exe"
 
 [Setup]
