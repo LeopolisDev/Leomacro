@@ -59,6 +59,7 @@ Sleep(15000)
 WinWait("ahk_exe RobloxPlayerBeta.exe", , 30)
 
 loopCounter := 0
+mainExePath := A_WorkingDir "\Leomacro.exe"
 
 Loop {
     getRobloxPos(,,&w,&h)
@@ -75,7 +76,7 @@ Loop {
     if (Mod(loopCounter, 15) == 0) {
         DetectHiddenWindows(True) 
 
-        if !WinExist("Main.ahk ahk_class AutoHotkey") {
+        if !WinExist("ahk_exe Leomacro.exe") && !WinExist("Main.ahk ahk_class AutoHotkey") {
             ExitApp()
         }
 
@@ -579,7 +580,7 @@ CloseMain() {
     query := "SELECT * FROM Win32_Process WHERE Name = 'AutoHotkey.exe' OR Name = 'AutoHotkeyU64.exe' OR Name = 'AutoHotkeyU32.exe' OR Name = 'AutoHotkey64.exe' OR Name = 'AutoHotkey32.exe'"
     for process in wmi.ExecQuery(query) {
         cmd := process.CommandLine
-        if (InStr(cmd, "Main.ahk")) {
+        if (InStr(cmd, "Main.ahk") || InStr(cmd, "Leomacro.exe")) {
             try ProcessClose(process.ProcessId)
         }
     }
@@ -594,7 +595,7 @@ RestartMain() {
     query := "SELECT * FROM Win32_Process WHERE Name = 'AutoHotkey.exe' OR Name = 'AutoHotkeyU64.exe' OR Name = 'AutoHotkeyU32.exe' OR Name = 'AutoHotkey64.exe' OR Name = 'AutoHotkey32.exe'"
     for process in wmi.ExecQuery(query) {
         cmd := process.CommandLine
-        if (InStr(cmd, "Main.ahk")) {
+        if (InStr(cmd, "Main.ahk") || InStr(cmd, "Leomacro.exe")) {
             try ProcessClose(process.ProcessId)
         }
     }
@@ -602,8 +603,10 @@ RestartMain() {
     tempWebhook := IniRead(SettingsFile, "Webhook", "Enabled", "OFF")
     WebhookEnabled := (tempWebhook = "1") ? true : false
 
-    if (A_PtrSize == 4) {
-    Run('"' A_WorkingDir '\submacros\AutoHotkey32.exe" "' A_WorkingDir '\Main.ahk"')
+    if FileExist(mainExePath) {
+        Run('"' mainExePath '"')
+    } else if (A_PtrSize == 4) {
+        Run('"' A_WorkingDir '\submacros\AutoHotkey32.exe" "' A_WorkingDir '\Main.ahk"')
     } else {
         Run('"' A_WorkingDir '\submacros\AutoHotkey64.exe" "' A_WorkingDir '\Main.ahk"')
     }

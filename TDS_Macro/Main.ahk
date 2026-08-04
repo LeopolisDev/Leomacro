@@ -48,7 +48,8 @@ global SettingsFile := AppDataOpt "\Settings.tds"
 global RecordingsDir := A_AppData "\leomacro\Recordings"
 global StateFile := A_AppData "\leomacro\state.ini"
 
-global StratsDir := A_WorkingDir "\Resources\Strats"
+global StratsDir := A_AppData "\leomacro\Strats"
+global LegacyStratsDir := A_WorkingDir "\Resources\Strats"
 
 global ShowIndicators := true
 
@@ -62,6 +63,16 @@ if !DirExist(AppDataOpt)
     DirCreate(AppDataOpt)
 if !DirExist(RecordingsDir)
     DirCreate(RecordingsDir)
+if !DirExist(StratsDir)
+    DirCreate(StratsDir)
+if DirExist(LegacyStratsDir) {
+    Loop Files, LegacyStratsDir "\*.strat" {
+        targetFile := StratsDir "\" A_LoopFileName
+        if !FileExist(targetFile) {
+            try FileCopy(A_LoopFileFullPath, targetFile, 0)
+        }
+    }
+}
 
 global VipLink := IniRead(SettingsFile, "Options", "VipLink", "") 
 global UseVipServer := IniRead(SettingsFile, "Options", "UseVipServer", "0")
@@ -82,8 +93,8 @@ global AutoEquip := IniRead(SettingsFile, "Options", "AutoEquip", 0)
 global CheckTheMap := IniRead(SettingsFile, "Options", "CheckTheMap", 1)
 global UseHForUpgrade := IniRead(SettingsFile, "Options", "UseHotkeyForUpgrade", 1)
 global CollectPlaytimeRewards:= IniRead(SettingsFile, "Options", "CollectPlaytimeRewards", "1")
-global Strategy1Path := IniRead(SettingsFile, "Options", "Strategy1", "")
-global Strategy2Path := IniRead(SettingsFile, "Options", "Strategy2", "")
+global Strategy1Path := ResolveStratPath(IniRead(SettingsFile, "Options", "Strategy1", ""))
+global Strategy2Path := ResolveStratPath(IniRead(SettingsFile, "Options", "Strategy2", ""))
 
 global DefaultMouseSpeed := IniRead(SettingsFile, "Options", "DefaultMouseSpeed", "2")
 global MouseDelay := IniRead(SettingsFile, "Options", "MouseDelay", "10")
@@ -108,6 +119,30 @@ global g_IsFirstLaunch := Integer(IniRead(StateFile, "State", "IsFirstLaunch", 1
 global SwapAmount := IniRead(SettingsFile, "Options", "SwapAmount", "4")
 global SwapUnit := IniRead(SettingsFile, "Options", "SwapUnit", "Runs")
 global CurrentRunCount := Integer(IniRead(StateFile, "State", "CurrentRunCount", "0"))
+
+ResolveStratPath(path) {
+    global StratsDir, LegacyStratsDir
+
+    if (path = "")
+        return ""
+
+    if FileExist(path)
+        return path
+
+    SplitPath(path, &fileName)
+    if (fileName = "")
+        return path
+
+    candidate := StratsDir "\" fileName
+    if FileExist(candidate)
+        return candidate
+
+    candidate := LegacyStratsDir "\" fileName
+    if FileExist(candidate)
+        return candidate
+
+    return path
+}
 
 SendMode("Event")
 SetDefaultMouseSpeed(DefaultMouseSpeed)
@@ -1546,7 +1581,7 @@ YouTubeLink(ctrl, *) {
 DownloadStrat(ctrl, *) {
     nm := ctrl.StratFile 
     
-    downloadedStrat := A_WorkingDir "\Resources\Strats" (SubStr(nm, 1, 1) = "\" ? nm : "\" nm)
+    downloadedStrat := StratsDir (SubStr(nm, 1, 1) = "\" ? nm : "\" nm)
 
     if (Strategy1Ctrl.Value = "") {
     Strategy1Ctrl.Value := downloadedStrat
@@ -4098,27 +4133,22 @@ RunRoblox(doReload := true) {
         }
 
         LogToConsole("Launching Roblox...", true, false)
-        started := false
-        for _, launchURL in launchURLs {
-            try {
-                Run(launchURL)
-            } catch Error as e {
-                LogToConsole("Failed to launch Roblox via " launchURL ": " e.Message, true, false)
-                continue
-            }
+        started := TryLaunchRobloxDirect()
 
-            if (WaitForRobloxWindow(20)) {
-                started := true
-                break
-            }
-        }
+        if (!started) {
+            for _, launchURL in launchURLs {
+                try {
+                    Run(launchURL)
+                } catch Error as e {
+                    LogToConsole("Failed to launch Roblox via " launchURL ": " e.Message, true, false)
+                    continue
+                }
 
-        if (!started && TryLaunchRobloxDirect()) {
-            started := true
-            try {
-                Run(launchURLs[1])
+                if (WaitForRobloxWindow(20)) {
+                    started := true
+                    break
+                }
             }
-            Sleep(2500)
         }
 
         if (!started) {

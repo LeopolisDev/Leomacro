@@ -48,7 +48,8 @@ global SettingsFile := AppDataOpt "\Settings.tds"
 global RecordingsDir := A_AppData "\leomacro\Recordings"
 global StateFile := A_AppData "\leomacro\state.ini"
 
-global StratsDir := A_WorkingDir "\Resources\Strats"
+global StratsDir := A_AppData "\leomacro\Strats"
+global LegacyStratsDir := A_WorkingDir "\Resources\Strats"
 
 global ShowIndicators := true
 
@@ -62,6 +63,16 @@ if !DirExist(AppDataOpt)
     DirCreate(AppDataOpt)
 if !DirExist(RecordingsDir)
     DirCreate(RecordingsDir)
+if !DirExist(StratsDir)
+    DirCreate(StratsDir)
+if DirExist(LegacyStratsDir) {
+    Loop Files, LegacyStratsDir "\*.strat" {
+        targetFile := StratsDir "\" A_LoopFileName
+        if !FileExist(targetFile) {
+            try FileCopy(A_LoopFileFullPath, targetFile, 0)
+        }
+    }
+}
 
 global VipLink := IniRead(SettingsFile, "Options", "VipLink", "") 
 global UseVipServer := IniRead(SettingsFile, "Options", "UseVipServer", "0")
@@ -82,8 +93,8 @@ global AutoEquip := IniRead(SettingsFile, "Options", "AutoEquip", 0)
 global CheckTheMap := IniRead(SettingsFile, "Options", "CheckTheMap", 1)
 global UseHForUpgrade := IniRead(SettingsFile, "Options", "UseHotkeyForUpgrade", 1)
 global CollectPlaytimeRewards:= IniRead(SettingsFile, "Options", "CollectPlaytimeRewards", "1")
-global Strategy1Path := IniRead(SettingsFile, "Options", "Strategy1", "")
-global Strategy2Path := IniRead(SettingsFile, "Options", "Strategy2", "")
+global Strategy1Path := ResolveStratPath(IniRead(SettingsFile, "Options", "Strategy1", ""))
+global Strategy2Path := ResolveStratPath(IniRead(SettingsFile, "Options", "Strategy2", ""))
 
 global DefaultMouseSpeed := IniRead(SettingsFile, "Options", "DefaultMouseSpeed", "2")
 global MouseDelay := IniRead(SettingsFile, "Options", "MouseDelay", "10")
@@ -108,6 +119,30 @@ global g_IsFirstLaunch := Integer(IniRead(StateFile, "State", "IsFirstLaunch", 1
 global SwapAmount := IniRead(SettingsFile, "Options", "SwapAmount", "4")
 global SwapUnit := IniRead(SettingsFile, "Options", "SwapUnit", "Runs")
 global CurrentRunCount := Integer(IniRead(StateFile, "State", "CurrentRunCount", "0"))
+
+ResolveStratPath(path) {
+    global StratsDir, LegacyStratsDir
+
+    if (path = "")
+        return ""
+
+    if FileExist(path)
+        return path
+
+    SplitPath(path, &fileName)
+    if (fileName = "")
+        return path
+
+    candidate := StratsDir "\" fileName
+    if FileExist(candidate)
+        return candidate
+
+    candidate := LegacyStratsDir "\" fileName
+    if FileExist(candidate)
+        return candidate
+
+    return path
+}
 
 SendMode("Event")
 SetDefaultMouseSpeed(DefaultMouseSpeed)
@@ -514,7 +549,7 @@ if (needUpdate) {
             
         responseText := whr.ResponseText
         
-        tempDir := StratsDir "\.download_temp"
+        tempDir := A_Temp "\leomacro_strats_update_" A_TickCount
         if DirExist(tempDir)
             DirDelete(tempDir, true)
         DirCreate(tempDir)
@@ -555,7 +590,9 @@ if (needUpdate) {
         }
 
         if (fileCount > 0 && successCount == 0) {
-            DirDelete(tempDir, true)
+            try {
+                DirDelete(tempDir, true)
+            }
             throw Error("All strategy downloads failed. Aborting update to protect existing files.")
         }
 
@@ -563,14 +600,37 @@ if (needUpdate) {
             DirCreate(StratsDir)
 
         Loop Files, StratsDir "\*.strat" {
-            try FileDelete(A_LoopFileFullPath)
+            try {
+                FileSetAttrib("-R", A_LoopFileFullPath)
+                FileDelete(A_LoopFileFullPath)
+            } catch Error as delErr {
+                try {
+                    FileSetAttrib("-R", A_LoopFileFullPath)
+                    FileDelete(A_LoopFileFullPath)
+                } catch Error as delErr2 {
+                    LogToConsole("Could not remove old strategy '" A_LoopFileName "': " delErr2.Message)
+                }
+            }
         }
 
         Loop Files, tempDir "\*.strat" {
-            FileMove(A_LoopFileFullPath, StratsDir "\" A_LoopFileName, 1)
+            targetFile := StratsDir "\" A_LoopFileName
+            try {
+                if FileExist(targetFile) {
+                    try {
+                        FileSetAttrib("-R", targetFile)
+                        FileDelete(targetFile)
+                    }
+                }
+                FileMove(A_LoopFileFullPath, targetFile, 1)
+            } catch Error as moveErr {
+                LogToConsole("Could not install strategy '" A_LoopFileName "': " moveErr.Message)
+            }
         }
         
-        DirDelete(tempDir, true)
+        try {
+            DirDelete(tempDir, true)
+        }
         IniWrite(A_Now, StateFile, "Cache", "LastUpdateTime")
         
     } catch Error as err {
@@ -991,7 +1051,7 @@ global TimeScaleModeCtrl := MainGui.Add("DropDownList", "x595 y216 w80 Hidden", 
 TimeScaleModeCtrl.Text := TimeScaleMode
 
 MainGui.SetFont("s9 w400 cFFFFFF")
-global MacroStepFailLbl := MainGui.Add("Text", "x310 y240 w95 h16 Hidden BackgroundTrans", "Step fails:")
+global MacroStepFailLbl := MainGui.Add("Text", "x334 y240 w95 h16 Hidden BackgroundTrans", "Step fails:")
 MainGui.SetFont("s9 w400 cFFFFFF")
 global MacroStepFailTxt := MainGui.Add("Text", "x390 y240 w24 Hidden", MacroStepFailLimit)
 global MacroStepFailUpDown := MainGui.Add("UpDown", "Range1-99 Hidden", MacroStepFailLimit)
@@ -1521,7 +1581,7 @@ YouTubeLink(ctrl, *) {
 DownloadStrat(ctrl, *) {
     nm := ctrl.StratFile 
     
-    downloadedStrat := A_WorkingDir "\Resources\Strats" (SubStr(nm, 1, 1) = "\" ? nm : "\" nm)
+    downloadedStrat := StratsDir (SubStr(nm, 1, 1) = "\" ? nm : "\" nm)
 
     if (Strategy1Ctrl.Value = "") {
     Strategy1Ctrl.Value := downloadedStrat
@@ -4053,29 +4113,58 @@ RunRoblox(doReload := true) {
     PlaceID := "3260590327"
 
     Loop {
+        launchURLs := []
         if ((UseVipServer = "1" || UseVipServer = 1) && VipLink != "") {
             if InStr(VipLink, "privateServerLinkCode=") {
                 RegExMatch(VipLink, "privateServerLinkCode=([a-fA-F0-9]+)", &f)
-                DeepLink := "roblox://placeID=" PlaceID "&linkcode=" f[1]
+                launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
             } else if InStr(VipLink, "share?code=") {
                 RegExMatch(VipLink, "code=([a-fA-F0-9]+)", &f)
-                DeepLink := "roblox://navigation/share_links?code=" f[1] "&type=Server"
+                launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
             } else {
-                DeepLink := "roblox://placeID=" PlaceID
+                launchURLs.Push("roblox://placeId=" PlaceID)
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
             }
         } else {
-            DeepLink := "roblox://placeID=" PlaceID
+            launchURLs.Push("roblox://placeId=" PlaceID)
+            launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
         }
 
-        Run(DeepLink)
-        if !WinWait("ahk_exe RobloxPlayerBeta.exe", , 60) {
+        LogToConsole("Launching Roblox...", true, false)
+        started := TryLaunchRobloxDirect()
+
+        if (!started) {
+            for _, launchURL in launchURLs {
+                try {
+                    Run(launchURL)
+                } catch Error as e {
+                    LogToConsole("Failed to launch Roblox via " launchURL ": " e.Message, true, false)
+                    continue
+                }
+
+                if (WaitForRobloxWindow(20)) {
+                    started := true
+                    break
+                }
+            }
+        }
+
+        if (!started) {
             LogToConsole("Roblox not started, retrying again...", true, false)
             continue
         }
+        LogToConsole("Roblox launched successfully.", true, false)
         ActivateRoblox()
         ExitFullScreen()
-        WinMinimize("ahk_exe RobloxPlayerBeta.exe")
-        WinMaximize("ahk_exe RobloxPlayerBeta.exe")
+        if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+            WinMinimize("ahk_exe RobloxPlayerBeta.exe")
+            WinMaximize("ahk_exe RobloxPlayerBeta.exe")
+        } else if WinExist("ahk_exe ApplicationFrameHost.exe") {
+            WinMinimize("ahk_exe ApplicationFrameHost.exe")
+            WinMaximize("ahk_exe ApplicationFrameHost.exe")
+        }
         ActivateRoblox()
 
         startTime := A_TickCount
@@ -4100,6 +4189,44 @@ RunRoblox(doReload := true) {
         SendEvent("{sc00F}")
         return true 
     }
+}
+
+WaitForRobloxWindow(timeout := 20) {
+    return (WinWait("ahk_exe RobloxPlayerBeta.exe", , timeout) || WinWait("ahk_exe ApplicationFrameHost.exe", , timeout))
+}
+
+TryLaunchRobloxDirect() {
+    exePath := GetRobloxPlayerExePath()
+    if (exePath = "") {
+        LogToConsole("Could not find RobloxPlayerBeta.exe for direct launch fallback.", true, false)
+        return false
+    }
+
+    LogToConsole("Trying direct Roblox launch fallback...", true, false)
+    try {
+        Run('"' exePath '"')
+    } catch Error as e {
+        LogToConsole("Direct Roblox launch failed: " e.Message, true, false)
+        return false
+    }
+
+    return WaitForRobloxWindow(25)
+}
+
+GetRobloxPlayerExePath() {
+    latestPath := ""
+    latestTime := ""
+    localAppData := EnvGet("LOCALAPPDATA")
+
+    Loop Files, localAppData "\Roblox\Versions\*\RobloxPlayerBeta.exe", "F" {
+        modTime := FileGetTime(A_LoopFileFullPath, "M")
+        if (latestPath = "" || modTime > latestTime) {
+            latestTime := modTime
+            latestPath := A_LoopFileFullPath
+        }
+    }
+
+    return latestPath
 }
 
 ExitFullScreen() {

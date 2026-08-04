@@ -37,9 +37,9 @@ getRobloxPos(&x := "", &y := "", &width := "", &height := "", hwnd := "") {
 ; Returns: hWnd = successful; 0 = window not found
 GetRobloxHWND()
 {
-	if (hwnd := WinExist("Roblox ahk_exe RobloxPlayerBeta.exe"))
+	if (hwnd := WinExist("ahk_exe RobloxPlayerBeta.exe"))
 		return hwnd
-	else if (WinExist("Roblox ahk_exe ApplicationFrameHost.exe"))
+	else if (WinExist("ahk_exe ApplicationFrameHost.exe"))
     {
         try
             hwnd := ControlGetHwnd("ApplicationFrameInputSinkWindow1")
@@ -54,12 +54,18 @@ GetRobloxHWND()
 ; Returns: 1 = successful; 0 = TargetError
 ActivateRoblox()
 {
-	try
-		WinActivate "Roblox"
-	catch
+	try {
+		if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+			WinActivate("ahk_exe RobloxPlayerBeta.exe")
+		} else if WinExist("ahk_exe ApplicationFrameHost.exe") {
+			WinActivate("ahk_exe ApplicationFrameHost.exe")
+		} else {
+			WinActivate("Roblox")
+		}
+	} catch {
 		return 0
-	else
-		return 1
+	}
+	return 1
 }
 
 EnableHighDpiSupport() {
