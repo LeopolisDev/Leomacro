@@ -514,7 +514,7 @@ if (needUpdate) {
             
         responseText := whr.ResponseText
         
-        tempDir := StratsDir "\.download_temp"
+        tempDir := A_Temp "\leomacro_strats_update_" A_TickCount
         if DirExist(tempDir)
             DirDelete(tempDir, true)
         DirCreate(tempDir)
@@ -555,7 +555,9 @@ if (needUpdate) {
         }
 
         if (fileCount > 0 && successCount == 0) {
-            DirDelete(tempDir, true)
+            try {
+                DirDelete(tempDir, true)
+            }
             throw Error("All strategy downloads failed. Aborting update to protect existing files.")
         }
 
@@ -563,14 +565,37 @@ if (needUpdate) {
             DirCreate(StratsDir)
 
         Loop Files, StratsDir "\*.strat" {
-            try FileDelete(A_LoopFileFullPath)
+            try {
+                FileSetAttrib("-R", A_LoopFileFullPath)
+                FileDelete(A_LoopFileFullPath)
+            } catch Error as delErr {
+                try {
+                    FileSetAttrib("-R", A_LoopFileFullPath)
+                    FileDelete(A_LoopFileFullPath)
+                } catch Error as delErr2 {
+                    LogToConsole("Could not remove old strategy '" A_LoopFileName "': " delErr2.Message)
+                }
+            }
         }
 
         Loop Files, tempDir "\*.strat" {
-            FileMove(A_LoopFileFullPath, StratsDir "\" A_LoopFileName, 1)
+            targetFile := StratsDir "\" A_LoopFileName
+            try {
+                if FileExist(targetFile) {
+                    try {
+                        FileSetAttrib("-R", targetFile)
+                        FileDelete(targetFile)
+                    }
+                }
+                FileMove(A_LoopFileFullPath, targetFile, 1)
+            } catch Error as moveErr {
+                LogToConsole("Could not install strategy '" A_LoopFileName "': " moveErr.Message)
+            }
         }
         
-        DirDelete(tempDir, true)
+        try {
+            DirDelete(tempDir, true)
+        }
         IniWrite(A_Now, StateFile, "Cache", "LastUpdateTime")
         
     } catch Error as err {
@@ -4053,22 +4078,41 @@ RunRoblox(doReload := true) {
     PlaceID := "3260590327"
 
     Loop {
+        launchURLs := []
         if ((UseVipServer = "1" || UseVipServer = 1) && VipLink != "") {
             if InStr(VipLink, "privateServerLinkCode=") {
                 RegExMatch(VipLink, "privateServerLinkCode=([a-fA-F0-9]+)", &f)
-                DeepLink := "roblox://placeID=" PlaceID "&linkcode=" f[1]
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
+                launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
             } else if InStr(VipLink, "share?code=") {
                 RegExMatch(VipLink, "code=([a-fA-F0-9]+)", &f)
-                DeepLink := "roblox://navigation/share_links?code=" f[1] "&type=Server"
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
+                launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
             } else {
-                DeepLink := "roblox://placeID=" PlaceID
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
+                launchURLs.Push("roblox://placeId=" PlaceID)
             }
         } else {
-            DeepLink := "roblox://placeID=" PlaceID
+            launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
+            launchURLs.Push("roblox://placeId=" PlaceID)
         }
 
-        Run(DeepLink)
-        if !WinWait("ahk_exe RobloxPlayerBeta.exe", , 60) {
+        started := false
+        for _, launchURL in launchURLs {
+            try {
+                Run(launchURL)
+            } catch Error as e {
+                LogToConsole("Failed to launch Roblox via " launchURL ": " e.Message, true, false)
+                continue
+            }
+
+            if WinWait("ahk_exe RobloxPlayerBeta.exe", , 20) {
+                started := true
+                break
+            }
+        }
+
+        if (!started) {
             LogToConsole("Roblox not started, retrying again...", true, false)
             continue
         }
