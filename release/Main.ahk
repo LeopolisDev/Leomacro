@@ -1151,7 +1151,7 @@ Auto_Consum.OnEvent("Click", RunAutoConsumableTool)
 ; tab 7 - credits ===========================
 
 MainGui.SetFont("s16 w450 cFFFFFF", "Segoe UI Variable")
-global Credit_TITLE := MainGui.Add("Text", "x30 y95 w640 Hidden Center", "leomacro - the best macro for TDS")
+global Credit_TITLE := MainGui.Add("Text", "x30 y95 w640 Hidden Center", "leomacro - fully made by opleoni")
 
 MainGui.SetFont("s12 w400 cFFFFFF", "Segoe UI")
 global Credit_Content := MainGui.Add("Link", "x30 y140 w640 Hidden", "
@@ -1159,9 +1159,9 @@ global Credit_Content := MainGui.Add("Link", "x30 y140 w640 Hidden", "
 Started on March 30, 2026. 
 My friend bet me that I wouldn't make a macro for TDS, but I did. 
 
-Join my discord server for help, update leaks and more!
+Join my discord server: <a href="https://discord.gg/dBkcVEBhE7">https://discord.gg/dBkcVEBhE7</a>
 
-Created by Darksen (darksenn_).
+Fully made by opleoni.
 SPECIAL THANKS TO MY DISCORD COMMUNITY!
 
 You can support my work <a href="https://www.donationalerts.com/r/darksen1">here</a>, do it if you're really enjoying the macro.
@@ -1569,7 +1569,7 @@ CloseWindow(ctrl, *) {
     ExitApp()
 }
 DiscordLink(ctrl, *) {
-    Run("https://discord.gg/DQnc2JDJtr")
+    Run("https://discord.gg/dBkcVEBhE7")
 }
 githubLink(ctrl, *) {
     Run("https://github.com/DarksenDev/tds-macro")
@@ -4216,13 +4216,17 @@ TryLaunchRobloxDirect() {
 GetRobloxPlayerExePath() {
     latestPath := ""
     latestTime := ""
-    localAppData := EnvGet("LOCALAPPDATA")
 
-    Loop Files, localAppData "\Roblox\Versions\*\RobloxPlayerBeta.exe", "F" {
-        modTime := FileGetTime(A_LoopFileFullPath, "M")
-        if (latestPath = "" || modTime > latestTime) {
-            latestTime := modTime
-            latestPath := A_LoopFileFullPath
+    for _, root in [EnvGet("ProgramFiles(x86)"), EnvGet("ProgramFiles"), EnvGet("LOCALAPPDATA")] {
+        if (root = "")
+            continue
+
+        Loop Files, root "\Roblox\Versions\*\RobloxPlayerBeta.exe", "F" {
+            modTime := FileGetTime(A_LoopFileFullPath, "M")
+            if (latestPath = "" || modTime > latestTime) {
+                latestTime := modTime
+                latestPath := A_LoopFileFullPath
+            }
         }
     }
 
