@@ -42,10 +42,11 @@ AdvImageSearch(templatePath, ax := 0, ay := 0, aw := 0, ah := 0, minScale := 0.0
         isInitialized := true
     }
 
-    if !WinExist("ahk_exe RobloxPlayerBeta.exe")
+    hwnd := GetRobloxHWND()
+    if (!hwnd)
         return {status: "error", message: "Roblox window not found", score: 0}
 
-    WinGetClientPos(&xClient, &yClient, &widthClient, &heightClient, "ahk_exe RobloxPlayerBeta.exe")
+    WinGetClientPos(&xClient, &yClient, &widthClient, &heightClient, "ahk_id " hwnd)
 
     baseScale := heightClient / 1009
 

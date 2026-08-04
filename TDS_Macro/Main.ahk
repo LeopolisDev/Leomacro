@@ -4135,6 +4135,16 @@ RunRoblox(doReload := true) {
         LogToConsole("Launching Roblox...", true, false)
         started := TryLaunchRobloxDirect()
 
+        if (started) {
+            try {
+                Run(launchURLs[1])
+            } catch Error as e {
+                LogToConsole("Failed to join Roblox after direct launch: " e.Message, true, false)
+                started := false
+            }
+            Sleep(2500)
+        }
+
         if (!started) {
             for _, launchURL in launchURLs {
                 try {
