@@ -1333,7 +1333,7 @@ Hoverwatchdog(*) {
         matchedGrad := false
         
         try {
-            WinGetPos(&chX, &chY,,, "ahk_id " hChild)
+            WinGetClientPos(&chX, &chY,,, "ahk_id " hChild)
             childMouseX := screenX - chX
             childMouseY := screenY - chY
         } catch {
