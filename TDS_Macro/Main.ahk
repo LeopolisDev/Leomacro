@@ -88,6 +88,7 @@ global Strategy2Path := IniRead(SettingsFile, "Options", "Strategy2", "")
 global DefaultMouseSpeed := IniRead(SettingsFile, "Options", "DefaultMouseSpeed", "2")
 global MouseDelay := IniRead(SettingsFile, "Options", "MouseDelay", "10")
 global KeyDelay := IniRead(SettingsFile, "Options", "KeyDelay", "20")
+global MacroStepFailLimit := IniRead(SettingsFile, "Options", "MacroStepFailLimit", "5")
 
 global PlaceTowerKey := IniRead(SettingsFile, "RecordingHotkeys", "PlaceTowerKey", "f")
 global UpgradeTowerKey := IniRead(SettingsFile, "RecordingHotkeys", "UpgradeTowerKey", "^u")
@@ -989,6 +990,13 @@ MainGui.SetFont("s9 w400 cFFFFFF")
 global TimeScaleModeCtrl := MainGui.Add("DropDownList", "x595 y216 w80 Hidden", ["OFF","1.5x","2x"])
 TimeScaleModeCtrl.Text := TimeScaleMode
 
+MainGui.SetFont("s9 w400 cAAAAAA")
+global MacroStepFailLbl := MainGui.Add("Text", "x310 y240 w95 h16 Hidden BackgroundTrans", "Step fails:")
+MainGui.SetFont("s9 w400 cFFFFFF")
+global MacroStepFailTxt := MainGui.Add("Text", "x390 y240 w24 Hidden", MacroStepFailLimit)
+global MacroStepFailUpDown := MainGui.Add("UpDown", "Range1-99 Hidden", MacroStepFailLimit)
+MacroStepFailUpDown.OnEvent("Change", (ctrl, *) => MacroStepFailTxt.Value := ctrl.Value)
+
 MainGui.SetFont("s9 w400 cFFFFFF")
 global MouseSpeedLbl := MainGui.Add("Text", "x310 y260 w110 h20 Hidden BackgroundTrans", "Mouse Speed:")
 global MouseSpeedTxt := MainGui.Add("Text", "x389 y260 w26 Hidden", DefaultMouseSpeed)
@@ -1422,11 +1430,12 @@ ShowTabContent(tab) {
                      Tab4_Line2, SendCurrCtrl, Tab4_Info, Tab4_Btn1, Tab4_Btn2, DebugLogsCtrl, WebhookScreenshotsCtrl, WebhookTriumphScreenshotsCtrl, WebhookSepatateTriumphScreenshotsCtrl]
             ctrl.Visible := true
         EnableWebhookLink2()
-} else if (tab = "Tab5") {
+    } else if (tab = "Tab5") {
         for ctrl in [Tab5_Section1, Tab5_Line1, Tab5_Lbl1, ChainKeyCtrl,
                      Tab5_Lbl2, BeatKeyCtrl, Tab5_Lbl3, CaravanKeyCtrl,
                      Tab5_Lbl44, RaiseDeadKeyCtrl, Tab5_Lbl55, HologramKeyCtrl,
                      Tab5_Lbl99, Tab5_LblUPG, Tab5_LblUPGBTM, CancelPlacementKeyCtrl, UpgradeTowerGCtrl, UpgradeTowerGBCtrl, Tab1_Lbl3, TimeScaleModeCtrl,
+                     MacroStepFailLbl, MacroStepFailTxt, MacroStepFailUpDown,
                      Tab5_Section2, Tab5_Line2, Tab5_Help6,
                      UseRestartBtnCtrl, Tab5_Help4, UsePlayAgainBtnCtrl, Tab5_Help5,
                      CheckTheMapCtrl, UseUpgradeHCtrl, Tab5_Help7, PotatoModeCtrl, DebugConsoleCtrl,
@@ -1459,6 +1468,8 @@ ShowTabContent(tab) {
         HoloKeyCtrl.Value := HoloKey
         UseRaiseDeadKeyCtrl.Value := UseRaiseDeadKey
         TimeScaleModeCtrl.Text := TimeScaleMode
+        MacroStepFailTxt.Value := MacroStepFailLimit
+        MacroStepFailUpDown.Value := MacroStepFailLimit
         
         MouseSpeedUpDown.Value := DefaultMouseSpeed
         MouseSpeedTxt.Value := DefaultMouseSpeed
@@ -2532,7 +2543,12 @@ SimplicityPath() {
 
 
 CloneTower(towerId, x, y, wait := 0) {
-    global Towers, unfocusX, unfocusY, LastOpenedTowerID, CancelPlacementKey, HologramKey, Recording
+    global Towers, unfocusX, unfocusY, LastOpenedTowerID, CancelPlacementKey, HologramKey, Recording, MacroStepFailLimit
+
+    if (!Towers.Has(towerId)) {
+        LogToConsole("Tower " towerId " not found for cloning!")
+        return false
+    }
 
     if (wait > 0 && !Recording) {
         Sleep(wait)
@@ -2545,7 +2561,16 @@ CloneTower(towerId, x, y, wait := 0) {
         Sleep(500)
     }
 
+    failLimit := Max(1, Integer(MacroStepFailLimit))
+    attempts := 0
+    startTime := A_TickCount
+
     loop {
+        if (A_TickCount - startTime > 30000) {
+            LogToConsole("Cloning tower " towerId " timed out, skipping the step.")
+            return false
+        }
+
         SendEvent("{" HologramKey "}")
         Sleep 150
 
@@ -2580,10 +2605,15 @@ CloneTower(towerId, x, y, wait := 0) {
         SendEvent("{" CancelPlacementKey "}")
 
         if (ReadMessage(["don't", "have", "enough", "cash", "clone", "this", "tower", "hologram", "ability"])) {
+            attempts++
+            if (attempts >= failLimit) {
+                LogToConsole("Cloning tower " towerId " failed after " attempts " attempts, skipping the step.")
+                return false
+            }
             Sleep 1000
             continue
         } else {
-            break
+            return true
         }
     }
 }
@@ -2603,6 +2633,7 @@ ActivateRaiseTheDead(wait := 0) {
 
     SendEvent("{" RaiseDeadKey "}")
     LogToConsole("Successfully raised the dead.")
+    return true
 }
 
 
@@ -3058,7 +3089,7 @@ SaveAllSettings(ctrl, *) {
     global PlaceTowerKey, UpgradeTowerKey, AlignCameraKey, ChangeDJTrackKey
     global SellTowerKey, DeleteTowerRecordingKey, RecordInputsKey
     global SettingsFile
-    global DefaultMouseSpeed, MouseDelay, KeyDelay
+    global DefaultMouseSpeed, MouseDelay, KeyDelay, MacroStepFailLimit
     global HoloKey, RaiseDeadKey, UseRaiseDeadKey, HologramKey, CollectPlaytimeRewards, UpgradeTowerGKey, UpgradeTowerGBKey, UseHForUpgrade
 
     tempChainKey := SubStr(RegExReplace(ChainKeyCtrl.Value, "\s", ""), 1, 1)
@@ -3162,6 +3193,7 @@ SaveAllSettings(ctrl, *) {
     DefaultMouseSpeed := MouseSpeedUpDown.Value
     MouseDelay := MouseDelayUpDown.Value
     KeyDelay := KeyDelayUpDown.Value
+    MacroStepFailLimit := MacroStepFailUpDown.Value
     
     IniWrite(ChainKey, SettingsFile, "Hotkeys", "Chain")
     IniWrite(BeatKey, SettingsFile, "Hotkeys", "Beat")
@@ -3185,6 +3217,7 @@ SaveAllSettings(ctrl, *) {
     IniWrite(DefaultMouseSpeed, SettingsFile, "Options", "DefaultMouseSpeed")
     IniWrite(MouseDelay, SettingsFile, "Options", "MouseDelay")
     IniWrite(KeyDelay, SettingsFile, "Options", "KeyDelay")
+    IniWrite(MacroStepFailLimit, SettingsFile, "Options", "MacroStepFailLimit")
 
     IniWrite(PlaceTowerKey, SettingsFile, "RecordingHotkeys", "PlaceTowerKey")
     IniWrite(UpgradeTowerKey, SettingsFile, "RecordingHotkeys", "UpgradeTowerKey")
@@ -3530,7 +3563,7 @@ PlayStrategy() {
     i := 1
     while (i <= RecordedSteps.Length) {
         step := RecordedSteps[i]
-        isMacroStep := RegExMatch(step, "i)^(Click|Send|Sleep)\s*\(")
+        stepSucceeded := true
 
         if RegExMatch(step, "i)UpgradeTower\s*\(\s*([^,]+?)\s*(?:,\s*(false|true)\s*)?(?:,\s*(\d+)\s*)?(?:,\s*(\d+)\s*)?(?:,\s*(\d+)\s*)?\s*\)", &m) {
             currentID    := Trim(m[1])
@@ -3549,20 +3582,45 @@ PlayStrategy() {
                 }
             }
 
-            success := UpgradeTower(currentID, false, countUpgrades, currentPath, currentpathLevel)
-            i := success ? lookAhead : i + 1
+            try {
+                stepSucceeded := UpgradeTower(currentID, false, countUpgrades, currentPath, currentpathLevel)
+            } catch Error as e {
+                stepSucceeded := false
+                LogToConsole("ERROR executing step " i ": " step " - " e.Message)
+            }
+            if (stepSucceeded)
+                i := lookAhead
         } else if RegExMatch(step, "i)SetDJTrack\s*\(\s*([^\s,)]+)\s*\)", &t) {
-            SetDJTrack(t[1])
-            i++
+            try {
+                stepSucceeded := SetDJTrack(t[1])
+            } catch Error as e {
+                stepSucceeded := false
+                LogToConsole("ERROR executing step " i ": " step " - " e.Message)
+            }
         } else if RegExMatch(step, "i)SpawnTower\s*\(.*\)") {
-            ExecuteStep(step)
-            i++
+            try {
+                stepSucceeded := ExecuteStep(step)
+            } catch Error as e {
+                stepSucceeded := false
+                LogToConsole("ERROR executing step " i ": " step " - " e.Message)
+            }
         } else {
             try {
-                ExecuteStep(step)
+                stepSucceeded := ExecuteStep(step)
             } catch Error as e { 
-                LogToConsole("ERROR executing step " i ": " step)
+                stepSucceeded := false
+                LogToConsole("ERROR executing step " i ": " step " - " e.Message)
             }
+        }
+
+        if (!stepSucceeded) {
+            LogToConsole("Step " i " failed, skipping: " step)
+        }
+
+        if (stepSucceeded) {
+            if (i <= RecordedSteps.Length && !RegExMatch(step, "i)UpgradeTower\s*\("))
+                i++
+        } else {
             i++
         }
     }
@@ -3580,63 +3638,57 @@ ExecuteStep(step) {
     step := RegExReplace(step, "\s*;.*$", "")
     step := Trim(step)
     if (step = "")
-        return
+        return true
     if RegExMatch(step, "i)SpawnTower\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d)\s*,\s*(.*?)\s*\)", &m) {
-        SpawnTower(m[1], m[2], m[3], Trim(m[4]))
-        return
+        return SpawnTower(m[1], m[2], m[3], Trim(m[4]))
     }
     if RegExMatch(step, "i)UpgradeTower\s*\(\s*([^,]+?)\s*(?:,\s*(false|true)\s*)?(?:,\s*(\d+)\s*)?(?:,\s*(\d+)\s*)?(?:,\s*(\d+)\s*)?\s*\)", &m) {
-        UpgradeTower(Trim(m[1]), (m[2]="true"), (m[3]!="") ? Integer(m[3]) : 1, (m[4]!="") ? Integer(m[4]) : 0, (m[5]!="") ? Integer(m[5]) : 4)
-        return
+        return UpgradeTower(Trim(m[1]), (m[2]="true"), (m[3]!="") ? Integer(m[3]) : 1, (m[4]!="") ? Integer(m[4]) : 0, (m[5]!="") ? Integer(m[5]) : 4)
     }
     
     if RegExMatch(step, "i)CloneTower\s*\(\s*([^,]+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)", &m) {
-        CloneTower(Trim(m[1]), Integer(m[2]), Integer(m[3]), Integer(m[4]))
-        return
+        return CloneTower(Trim(m[1]), Integer(m[2]), Integer(m[3]), Integer(m[4]))
     }
 
     if RegExMatch(step, "i)CloneTower\s*\(\s*([^,]+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)", &m) {
-        CloneTower(Trim(m[1]), Integer(m[2]), Integer(m[3]), 0)
-        return
+        return CloneTower(Trim(m[1]), Integer(m[2]), Integer(m[3]), 0)
     }
     if RegExMatch(step, "i)ActivateRaiseTheDead\s*\(\s*(\d+)\s*\)", &m) {
-        ActivateRaiseTheDead(Integer(m[1]))
-        return
+        return ActivateRaiseTheDead(Integer(m[1]))
     }
     if RegExMatch(step, "i)ActivateRaiseTheDead\s*\(\s*\)", &m) {
-        ActivateRaiseTheDead(0)
-        return
+        return ActivateRaiseTheDead(0)
     }
 
     if RegExMatch(step, "i)SetDJTrack\s*\(\s*(.+?)\s*\)", &m) {
         track := Trim(m[1], ' "')
         if (track != "")
-            SetDJTrack(track)
-        return
+            return SetDJTrack(track)
+        return false
     }
     if RegExMatch(step, "i)^Click\s*\(\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*(.+?))?\s*\)$", &m) {
         button := InStr(m[3], "Right") ? "Right" : "Left"
         Click(ScaleX(m[1]) " " ScaleY(m[2]) " " button)
-        return
+        return true
     }
     if RegExMatch(step, 'i)^Send\s*\(\s*"([^"]+)"\s*,\s*hold:=(\d+)\s*\)$', &m) {
         SendEvent("{" m[1] " down}")
         Sleep(Integer(m[2]))
         SendEvent("{" m[1] " up}")
-        return
+        return true
     }
     if RegExMatch(step, "i)^Sleep\s*\(\s*(\d+)\s*\)$", &m) {
         Sleep(Integer(m[1]))
-        return
+        return true
     }
     if RegExMatch(step, "i)Commander\s*:=\s*true") {
         Commander := true
-        return
+        return true
     }
     if RegExMatch(step, "i)SellTower\s*\(\s*([^)]+?)\s*\)", &m) {
-        SellTower(Trim(m[1]))
-        return
+        return SellTower(Trim(m[1]))
     }
+    return false
 }
 
 LowerGraphics() {
@@ -4808,7 +4860,7 @@ getSlots() {
 
 
 SpawnTower(X, Y, slotNumber, towerID) {
-    global Towers, LastOpenedTowerID, CancelPlacementKey, canUseAbility
+    global Towers, LastOpenedTowerID, CancelPlacementKey, canUseAbility, MacroStepFailLimit
     LogToConsole("Placing tower " towerID " (slot " slotNumber ") at x:" X " y:" Y "...")
 
     X := sX(X, StrategyWidth)
@@ -4825,13 +4877,15 @@ SpawnTower(X, Y, slotNumber, towerID) {
 
     attemptMultiplier := 1
     startTime := A_TickCount
+    failLimit := Max(1, Integer(MacroStepFailLimit))
+    attempts := 0
     canUseAbility := false
 
     Loop {
         if (A_TickCount - startTime > 300000) {
-            LogToConsole("Tower placement timed out (5+ minutes). Reloading the macro...")
-            SafeReload()
-            return
+            LogToConsole("Tower placement timed out. Skipping the step.")
+            canUseAbility := true
+            return false
         }
 
         ActivateRoblox()
@@ -4851,7 +4905,8 @@ SpawnTower(X, Y, slotNumber, towerID) {
             Towers[towerID] := {x: X, y: TowerY, slot: Integer(slotNumber), level: 0, path: 0, pathLevel: 0}
             LogToConsole("Tower " towerID " placed successfully")
             LastOpenedTowerID := towerID
-            break
+            canUseAbility := true
+            return true
         } else {
             LogToConsole("Tower " towerID " placement failed, retrying...")
             if (ReadMessage(["cannot", "here", "hereg", "herd", "her"],,["need", "more", "to"],"\$|\d")) {
@@ -4862,7 +4917,8 @@ SpawnTower(X, Y, slotNumber, towerID) {
                     Towers[towerID] := {x: X, y: TowerY, slot: Integer(slotNumber), level: 0, path: 0, pathLevel: 0}
                     LogToConsole("Tower " towerID " placed successfully")
                     LastOpenedTowerID := towerID
-                    break
+                    canUseAbility := true
+                    return true
                 }
 
                 offsets := [[0, -5 * attemptMultiplier], [5 * attemptMultiplier, 0], [0, 5 * attemptMultiplier], [-5 * attemptMultiplier, 0]]
@@ -4875,9 +4931,9 @@ SpawnTower(X, Y, slotNumber, towerID) {
                 
                 for index, offset in offsets {
                     if (A_TickCount - startTime > 300000) {
-                        LogToConsole("Tower placement timed out during offset retry. Executing safereload()...")
-                        safeReload()
-                        return
+                        LogToConsole("Tower placement timed out during offset retry. Skipping the step.")
+                        canUseAbility := true
+                        return false
                     }
 
                     newX := X + offset[1]
@@ -4893,7 +4949,8 @@ SpawnTower(X, Y, slotNumber, towerID) {
                         Towers[towerID] := {x: newX, y: newY, slot: Integer(slotNumber), level: 0, path: 0, pathLevel: 0}
                         LogToConsole("Tower " towerID " placed successfully")
                         LastOpenedTowerID := towerID
-                        break 2
+                        canUseAbility := true
+                        return true
                     }
                 }
                 
@@ -4903,12 +4960,17 @@ SpawnTower(X, Y, slotNumber, towerID) {
                 }
             } 
         }
+        attempts++
+        if (attempts >= failLimit) {
+            LogToConsole("Tower " towerID " placement failed after " attempts " attempts, skipping the step.")
+            canUseAbility := true
+            return false
+        }
     }
-    canUseAbility := true
 }
 
 SellTower(towerID) {
-    global Towers, unfocusX, unfocusY
+    global Towers, unfocusX, unfocusY, MacroStepFailLimit
 
     if (!Towers.Has(towerID)) {
         LogToConsole("Tower " towerID " not found for selling!")
@@ -4922,6 +4984,7 @@ SellTower(towerID) {
     Sleep(400)
 
     attempts := 0
+    failLimit := Max(1, Integer(MacroStepFailLimit))
     Loop {
         menuFound := false
         Loop 30 {
@@ -4934,7 +4997,7 @@ SellTower(towerID) {
         }
         if (!menuFound) {
             attempts++
-            if (attempts > 15) {
+            if (attempts >= failLimit) {
                 LogToConsole("Tower " towerID " menu not found for selling")
                 return false
             }
@@ -4955,7 +5018,7 @@ SellTower(towerID) {
 }
 
 UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLevel := 0) {
-    global Towers, unfocusX, unfocusY, LastOpenedTowerID
+    global Towers, unfocusX, unfocusY, LastOpenedTowerID, MacroStepFailLimit
     global PotatoMode, Recording, RecordedSteps, Commander, canUseAbility
 
     if (!Towers.Has(towerID)) {
@@ -4978,6 +5041,7 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
     LastOpenedTowerID := towerID
     upgradesDone := 0
     attempts := 0
+    failLimit := Max(1, Integer(MacroStepFailLimit))
 
     Sleep(20)
 
@@ -4989,9 +5053,10 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
 
         if (!openedSuccessfully) {
             attempts++
-            if (attempts > 30) {
-                LogToConsole("Tower " towerID " menu not found after 30 attempts, reloading...", true)
-                SafeReload()
+            if (attempts >= failLimit) {
+                LogToConsole("Tower " towerID " menu not found after " attempts " attempts, skipping the step.", true)
+                canUseAbility := true
+                return false
             }
             variation := Random(-8, 8)
             Click(targetX, targetY + ScaleY(variation))
@@ -5085,9 +5150,19 @@ UpgradeTower(towerID, skipOpen := false, totalUpgrades := 1, path := 0, pathLeve
                 return true
 
             canUseAbility := true
+            attempts := 0
             continue
         }
+
+        attempts++
+        if (attempts >= failLimit) {
+            LogToConsole("Tower " towerID " upgrade failed after " attempts " attempts, skipping the step.", true)
+            canUseAbility := true
+            return false
+        }
     }
+
+    return false
 }
 
 isDisconnected() {
@@ -5239,10 +5314,10 @@ UseAbilities(*) {
 }
 
 SetDJTrack(track) {
-    global Towers, unfocusX, unfocusY, LastOpenedTowerID
+    global Towers, unfocusX, unfocusY, LastOpenedTowerID, MacroStepFailLimit, canUseAbility
     if (!Towers.Has("DJ")) {
         LogToConsole("DJ tower not found!")
-        return
+        return false
     }
     LogToConsole("Setting DJ track to " track "...")
     canUseAbility := false
@@ -5256,13 +5331,28 @@ SetDJTrack(track) {
 
     Sleep(200)
 
+    failLimit := Max(1, Integer(MacroStepFailLimit))
+    attempts := 0
+    startTime := A_TickCount
+
     Loop {
+        if (A_TickCount - startTime > 30000) {
+            LogToConsole("Setting DJ track timed out, skipping the step.")
+            canUseAbility := true
+            return false
+        }
+
         getRobloxPos(&rx, &ry, &w, &h)
-        startTime := A_TickCount
 
         openedSuccessfully := waitForTowerUI(&resv2, &resv1)
 
         if (!openedSuccessfully) {
+            attempts++
+            if (attempts >= failLimit) {
+                LogToConsole("DJ track menu could not be opened after " attempts " attempts, skipping the step.")
+                canUseAbility := true
+                return false
+            }
             variation := Random(-10, 10)
             Click(Towers["DJ"].x, Towers["DJ"].y + ScaleY(variation))
             Sleep(400)
@@ -5276,10 +5366,20 @@ SetDJTrack(track) {
             MouseMove(DJTrack.x, DJTrack.y)
             Sleep(20)
             MouseClick
+            canUseAbility := true
+            return true
         }
-        break
+
+        attempts++
+        if (attempts >= failLimit) {
+            LogToConsole("DJ track " track " not found after " attempts " attempts, skipping the step.")
+            canUseAbility := true
+            return false
+        }
+
+        Click(Towers["DJ"].x, Towers["DJ"].y)
+        Sleep(400)
     }
-    canUseAbility := true
 }
 
 UpdateTowerIndicator(towerID) {
