@@ -594,8 +594,8 @@ ChildGui.BackColor := "181818"
 ChildGui.SetFont("s10 cWhite", "Segoe UI")
 
 ChildGui.SetFont("s10 w400 c3A86FF", "Segoe UI")
-global Tab1_Section2 := ChildGui.Add("Text", "x10 y60 h22", "Community Strategies")
-global Tab1_Line2 := ChildGui.Add("Progress", "x10 y83 w600 h1 Background333333", 0)
+global Tab1_Section2 := ChildGui.Add("Text", "x10 y0 h22", "Community Strategies")
+global Tab1_Line2 := ChildGui.Add("Progress", "x10 y23 w600 h1 Background333333", 0)
 
 width := FrameW - 6
 
@@ -626,7 +626,7 @@ Loop Files, StratsDir "\*.strat" {
     })
 }
 
-StartY := 100
+StartY := 40
 CardH  := 115
 CardW  := 600
 Gap    := 15
