@@ -4082,21 +4082,22 @@ RunRoblox(doReload := true) {
         if ((UseVipServer = "1" || UseVipServer = 1) && VipLink != "") {
             if InStr(VipLink, "privateServerLinkCode=") {
                 RegExMatch(VipLink, "privateServerLinkCode=([a-fA-F0-9]+)", &f)
-                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
                 launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
             } else if InStr(VipLink, "share?code=") {
                 RegExMatch(VipLink, "code=([a-fA-F0-9]+)", &f)
-                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
                 launchURLs.Push("roblox://placeId=" PlaceID "&linkCode=" f[1])
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID "&linkCode=" f[1])
             } else {
-                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
                 launchURLs.Push("roblox://placeId=" PlaceID)
+                launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
             }
         } else {
-            launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
             launchURLs.Push("roblox://placeId=" PlaceID)
+            launchURLs.Push("https://www.roblox.com/games/start?placeId=" PlaceID)
         }
 
+        LogToConsole("Launching Roblox...", true, false)
         started := false
         for _, launchURL in launchURLs {
             try {
@@ -4106,20 +4107,34 @@ RunRoblox(doReload := true) {
                 continue
             }
 
-            if WinWait("ahk_exe RobloxPlayerBeta.exe", , 20) {
+            if (WaitForRobloxWindow(20)) {
                 started := true
                 break
             }
+        }
+
+        if (!started && TryLaunchRobloxDirect()) {
+            started := true
+            try {
+                Run(launchURLs[1])
+            }
+            Sleep(2500)
         }
 
         if (!started) {
             LogToConsole("Roblox not started, retrying again...", true, false)
             continue
         }
+        LogToConsole("Roblox launched successfully.", true, false)
         ActivateRoblox()
         ExitFullScreen()
-        WinMinimize("ahk_exe RobloxPlayerBeta.exe")
-        WinMaximize("ahk_exe RobloxPlayerBeta.exe")
+        if WinExist("ahk_exe RobloxPlayerBeta.exe") {
+            WinMinimize("ahk_exe RobloxPlayerBeta.exe")
+            WinMaximize("ahk_exe RobloxPlayerBeta.exe")
+        } else if WinExist("ahk_exe ApplicationFrameHost.exe") {
+            WinMinimize("ahk_exe ApplicationFrameHost.exe")
+            WinMaximize("ahk_exe ApplicationFrameHost.exe")
+        }
         ActivateRoblox()
 
         startTime := A_TickCount
@@ -4144,6 +4159,43 @@ RunRoblox(doReload := true) {
         SendEvent("{sc00F}")
         return true 
     }
+}
+
+WaitForRobloxWindow(timeout := 20) {
+    return (WinWait("ahk_exe RobloxPlayerBeta.exe", , timeout) || WinWait("ahk_exe ApplicationFrameHost.exe", , timeout))
+}
+
+TryLaunchRobloxDirect() {
+    exePath := GetRobloxPlayerExePath()
+    if (exePath = "") {
+        LogToConsole("Could not find RobloxPlayerBeta.exe for direct launch fallback.", true, false)
+        return false
+    }
+
+    LogToConsole("Trying direct Roblox launch fallback...", true, false)
+    try {
+        Run('"' exePath '"')
+    } catch Error as e {
+        LogToConsole("Direct Roblox launch failed: " e.Message, true, false)
+        return false
+    }
+
+    return WaitForRobloxWindow(25)
+}
+
+GetRobloxPlayerExePath() {
+    latestPath := ""
+    latestTime := ""
+
+    Loop Files, A_LocalAppData "\Roblox\Versions\*\RobloxPlayerBeta.exe", "F" {
+        modTime := FileGetTime(A_LoopFileFullPath, "M")
+        if (latestPath = "" || modTime > latestTime) {
+            latestTime := modTime
+            latestPath := A_LoopFileFullPath
+        }
+    }
+
+    return latestPath
 }
 
 ExitFullScreen() {
