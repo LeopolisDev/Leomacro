@@ -2618,7 +2618,7 @@ CloneTower(towerId, x, y, wait := 0) {
     SendEvent("{" CancelPlacementKey "}")
     Sleep 50
     if (LastOpenedTowerID != "" || Recording) {
-        Click(ScaleX(unfocusX), ScaleY(unfocusY))
+        ClickAndRestoreMouse(ScaleX(unfocusX), ScaleY(unfocusY))
         Sleep(500)
     }
 
@@ -2688,7 +2688,7 @@ ActivateRaiseTheDead(wait := 0) {
 
     SendEvent("{" CancelPlacementKey "}")
     if (LastOpenedTowerID != "") {
-        Click(ScaleX(unfocusX), ScaleY(unfocusY))
+        ClickAndRestoreMouse(ScaleX(unfocusX), ScaleY(unfocusY))
         Sleep(450)
     }
 
@@ -6123,6 +6123,17 @@ closeChat() {
         MouseMove(cx, cy)
         LogToConsole("Closed chat")
     }
+}
+
+ClickAndRestoreMouse(x, y, button := "") {
+    MouseGetPos(&cx, &cy)
+    if (button != "") {
+        Click(x, y, button)
+    } else {
+        Click(x, y)
+    }
+    Sleep(20)
+    MouseMove(cx, cy)
 }
 
 
